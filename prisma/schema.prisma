@@ -36,6 +36,7 @@ model Project {
   updatedAt       DateTime     @updatedAt
   title           String
   description     String
+  longDescription String?      // Detailed project description
   fundingGoal     Float
   currentFunding  Float       @default(0)
   category        String
@@ -45,15 +46,15 @@ model Project {
   tokenPrice      Float
   tokensAvailable Int
   status          String      @default("pending") // pending, active, completed
-  metadata        Json?       // Stores stage, round, tech stack, team, roadmap, metrics
+  metadata        Json?       // Stores stage, round, tech stack, team, roadmap, metrics, documentation, AI analysis
   creator         User        @relation(fields: [creatorId], references: [id])
   creatorId       String
   investments     Investment[]
   proposals       Proposal[]
-  dueDiligence        DueDiligence?
-  tokenMetadata    Json?    // Stores token configuration and metadata
-  dividendSettings Json?    // Stores dividend configuration (frequency, thresholds, etc.)
-  distributions    DividendDistribution[]
+  dueDiligence    DueDiligence?
+  tokenMetadata   Json?       // Stores token configuration and metadata
+  dividendSettings Json?      // Stores dividend configuration (frequency, thresholds, etc.)
+  distributions   DividendDistribution[]
 }
 
 model Investment {

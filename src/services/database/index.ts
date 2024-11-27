@@ -351,4 +351,29 @@ export class DatabaseService {
       },
     })
   }
+
+  static async getProjectTransactions(projectId: string) {
+    return prisma.tokenTransaction.findMany({
+      where: { projectId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            walletAddress: true
+          }
+        },
+        receiver: {
+          select: {
+            id: true,
+            name: true,
+            walletAddress: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+  }
 } 

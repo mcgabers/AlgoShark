@@ -23,18 +23,31 @@ interface ProjectMetadata {
     role: string
     experience: string
     linkedin: string
+    avatar?: string
   }>
   roadmap: Array<{
     phase: string
     title: string
     description: string
     timeline: string
+    milestones: string[]
   }>
   metrics: {
     users: number
     growth: number
     retention: number
     revenue: number
+  }
+  documentation: {
+    technical: string
+    legal: string[]
+    governance: string
+  }
+  aiAnalysis: {
+    summary: string
+    strengths: string[]
+    risks: string[]
+    opportunities: string[]
   }
 }
 
@@ -198,7 +211,7 @@ async function main() {
 
   console.log('👥 Created users:', users.length)
 
-  // Create projects with technical details and roadmap
+  // Create projects with enhanced metadata
   const projects = await Promise.all(
     Array.from({ length: 30 }, async () => {
       const category = faker.helpers.arrayElement(Object.keys(PROJECT_CATEGORIES))
@@ -222,19 +235,32 @@ async function main() {
         team: Array.from({ length: faker.number.int({ min: 2, max: 5 }) }, () => ({
           role: faker.person.jobTitle(),
           experience: faker.person.bio(),
-          linkedin: faker.internet.userName()
+          linkedin: faker.internet.userName(),
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${faker.string.uuid()}`
         })),
         roadmap: Array.from({ length: 4 }, (_, i) => ({
           phase: `Phase ${i + 1}`,
           title: faker.company.buzzPhrase(),
-          description: faker.lorem.sentence(),
-          timeline: `Q${faker.number.int({ min: 1, max: 4 })} ${2024 + Math.floor(i / 4)}`
+          description: faker.lorem.paragraph(),
+          timeline: `Q${faker.number.int({ min: 1, max: 4 })} ${2024 + Math.floor(i / 4)}`,
+          milestones: Array.from({ length: 3 }, () => faker.company.buzzPhrase())
         })),
         metrics: {
           users: faker.number.int({ min: 100, max: 10000 }),
           growth: faker.number.float({ min: 0.1, max: 0.9 }),
           retention: faker.number.float({ min: 0.4, max: 0.95 }),
           revenue: stage !== 'Prototype' ? faker.number.int({ min: 10000, max: 1000000 }) : 0
+        },
+        documentation: {
+          technical: faker.lorem.paragraphs(3),
+          legal: Array.from({ length: 3 }, () => faker.lorem.paragraph()),
+          governance: faker.lorem.paragraphs(2)
+        },
+        aiAnalysis: {
+          summary: faker.lorem.paragraph(3),
+          strengths: Array.from({ length: 4 }, () => faker.company.buzzPhrase()),
+          risks: Array.from({ length: 3 }, () => faker.lorem.sentence()),
+          opportunities: Array.from({ length: 4 }, () => faker.company.buzzPhrase())
         }
       }
 
@@ -242,6 +268,7 @@ async function main() {
         data: {
           title: faker.company.catchPhrase(),
           description: categoryData.description(),
+          longDescription: faker.lorem.paragraphs(5),
           fundingGoal,
           currentFunding,
           category,

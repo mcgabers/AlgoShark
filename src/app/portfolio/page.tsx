@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BarChart2, TrendingUp, DollarSign } from 'lucide-react'
+import Link from 'next/link'
+import { useWallet } from '@/contexts/WalletContext'
 
 interface Investment {
   id: string
@@ -20,45 +22,6 @@ interface Project {
   investors: number
   status: 'active' | 'completed' | 'pending'
 }
-
-// Mock data - will be replaced with real data from API
-const investments: Investment[] = [
-  {
-    id: '1',
-    projectTitle: 'AI Content Generator',
-    investmentAmount: 5000,
-    tokenAmount: 5000,
-    currentValue: 6500,
-    returnPercentage: 30
-  },
-  {
-    id: '2',
-    projectTitle: 'Trading Algorithm',
-    investmentAmount: 7500,
-    tokenAmount: 7500,
-    currentValue: 8250,
-    returnPercentage: 10
-  }
-]
-
-const projects: Project[] = [
-  {
-    id: '1',
-    title: 'AI Content Generator',
-    fundingRaised: 50000,
-    fundingGoal: 75000,
-    investors: 25,
-    status: 'active'
-  },
-  {
-    id: '2',
-    title: 'Healthcare Assistant',
-    fundingRaised: 100000,
-    fundingGoal: 100000,
-    investors: 50,
-    status: 'completed'
-  }
-]
 
 function StatCard({
   title,
@@ -94,8 +57,13 @@ function StatCard({
 function InvestmentRow({ investment }: { investment: Investment }) {
   return (
     <tr>
-      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {investment.projectTitle}
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+        <Link 
+          href={`/projects/${investment.id}`}
+          className="font-medium text-gray-900 hover:text-blue-600"
+        >
+          {investment.projectTitle}
+        </Link>
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         ${investment.investmentAmount.toLocaleString()}
@@ -118,8 +86,13 @@ function ProjectRow({ project }: { project: Project }) {
 
   return (
     <tr>
-      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-        {project.title}
+      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+        <Link 
+          href={`/projects/${project.id}`}
+          className="font-medium text-gray-900 hover:text-blue-600"
+        >
+          {project.title}
+        </Link>
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
         ${project.fundingRaised.toLocaleString()} of ${project.fundingGoal.toLocaleString()}
@@ -155,10 +128,66 @@ function ProjectRow({ project }: { project: Project }) {
 
 export default function PortfolioPage() {
   const [view, setView] = useState<'investments' | 'projects'>('investments')
+  const [investments, setInvestments] = useState<Investment[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { user } = useWallet()
+
+  useEffect(() => {
+    async function fetchData() {
+      if (!user) return
+
+      try {
+        const [investmentsRes, projectsRes] = await Promise.all([
+          fetch(`/api/investments?userId=${user.id}`),
+          fetch(`/api/projects?creatorId=${user.id}`)
+        ])
+
+        if (!investmentsRes.ok || !projectsRes.ok) {
+          throw new Error('Failed to fetch portfolio data')
+        }
+
+        const [investmentsData, projectsData] = await Promise.all([
+          investmentsRes.json(),
+          projectsRes.json()
+        ])
+
+        setInvestments(investmentsData)
+        setProjects(projectsData)
+      } catch (error) {
+        console.error('Error fetching portfolio data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [user])
 
   const totalInvestment = investments.reduce((sum, inv) => sum + inv.investmentAmount, 0)
   const totalValue = investments.reduce((sum, inv) => sum + inv.currentValue, 0)
-  const totalReturn = ((totalValue - totalInvestment) / totalInvestment) * 100
+  const totalReturn = totalInvestment > 0 ? ((totalValue - totalInvestment) / totalInvestment) * 100 : 0
+
+  if (!user) {
+    return (
+      <main className="flex-1 p-6 overflow-y-auto">
+        <div className="rounded-md bg-yellow-50 p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Wallet Connection Required
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  Please connect your wallet to view your portfolio.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex-1 p-6 overflow-y-auto">
@@ -220,34 +249,54 @@ export default function PortfolioPage() {
 
         {/* Content */}
         <div className="mt-4">
-          {view === 'investments' ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead>
-                  <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                      Project
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Investment
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Tokens
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Current Value
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Return
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {investments.map((investment) => (
-                    <InvestmentRow key={investment.id} investment={investment} />
-                  ))}
-                </tbody>
-              </table>
+          {isLoading ? (
+            <div className="animate-pulse space-y-4">
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+              <div className="h-10 bg-gray-200 rounded w-full"></div>
+            </div>
+          ) : view === 'investments' ? (
+            investments.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="rounded-md bg-gray-50 p-4">
+                  <p className="text-sm text-gray-700">You haven't made any investments yet.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-300">
+                  <thead>
+                    <tr>
+                      <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                        Project
+                      </th>
+                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        Investment
+                      </th>
+                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        Tokens
+                      </th>
+                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        Current Value
+                      </th>
+                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                        Return
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {investments.map((investment) => (
+                      <InvestmentRow key={investment.id} investment={investment} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : projects.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="rounded-md bg-gray-50 p-4">
+                <p className="text-sm text-gray-700">You haven't created any projects yet.</p>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">

@@ -47,6 +47,44 @@ interface SecurityAuditResult {
 }
 
 export class DueDiligenceService {
+  static async getDueDiligence(projectId: string) {
+    try {
+      return await prisma.dueDiligence.findUnique({
+        where: { projectId },
+        include: {
+          reviews: {
+            include: {
+              reviewer: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          },
+          comments: {
+            include: {
+              author: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Error getting due diligence:', error)
+      throw error
+    }
+  }
+
   static async initiateDueDiligence(projectId: string): Promise<any> {
     try {
       return await prisma.$transaction(async (tx) => {

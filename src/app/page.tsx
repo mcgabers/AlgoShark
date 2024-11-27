@@ -273,7 +273,7 @@ export default function Home() {
                         <p className="text-sm text-gray-500">{formatTimeAgo(new Date(item.time))}</p>
                       </div>
                       <Link
-                        href={`/${item.type === 'proposal' ? 'governance' : 'discover'}/${item.type === 'proposal' ? item.proposalId : item.projectId}`}
+                        href={`/${item.type === 'proposal' ? 'governance' : 'projects'}/${item.type === 'proposal' ? item.proposalId : item.projectId}`}
                         className="text-sm font-medium text-blue-600 hover:text-blue-500"
                       >
                         View details

@@ -3,132 +3,85 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
-  ReactNode
+  useEffect,
+  useCallback,
+  type ReactNode,
 } from 'react'
 import algosdk from 'algosdk'
 import { AlgorandService } from '@/services/blockchain/algorand'
 
 interface WalletContextType {
   account: algosdk.Account | null
-  accountInfo: any | null
-  isConnecting: boolean
   isConnected: boolean
+  isConnecting: boolean
   connect: () => Promise<void>
   disconnect: () => void
-  createProjectToken: (projectName: string, totalSupply: number) => Promise<void>
-  investInProject: (projectAssetId: number, amount: number) => Promise<void>
+  balance: number | null
 }
 
-const WalletContext = createContext<WalletContextType | undefined>(undefined)
+const WalletContext = createContext<WalletContextType>({
+  account: null,
+  isConnected: false,
+  isConnecting: false,
+  connect: async () => {},
+  disconnect: () => {},
+  balance: null,
+})
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<algosdk.Account | null>(null)
-  const [accountInfo, setAccountInfo] = useState<any | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
+  const [balance, setBalance] = useState<number | null>(null)
 
-  // Check for existing wallet connection on mount
-  useEffect(() => {
-    const savedAccount = localStorage.getItem('algorand_account')
-    if (savedAccount) {
-      try {
-        const accountData = JSON.parse(savedAccount)
-        const recoveredAccount = algosdk.mnemonicToSecretKey(accountData.mnemonic)
-        setAccount(recoveredAccount)
-        setIsConnected(true)
-        fetchAccountInfo(recoveredAccount.addr)
-      } catch (error) {
-        console.error('Error recovering account:', error)
-        localStorage.removeItem('algorand_account')
-      }
-    }
-  }, [])
-
-  const fetchAccountInfo = async (address: string) => {
+  const connect = useCallback(async () => {
     try {
-      const info = await AlgorandService.getAccountInfo(address)
-      setAccountInfo(info)
-    } catch (error) {
-      console.error('Error fetching account info:', error)
-    }
-  }
+      setIsConnecting(true)
+      // For development, generate a test account
+      const newAccount = AlgorandService.generateAccount()
+      setAccount(newAccount)
 
-  const connect = async () => {
-    setIsConnecting(true)
-    try {
-      // Generate new account for demo purposes
-      // In production, this would integrate with MyAlgo, WalletConnect, etc.
-      const account = algosdk.generateAccount()
-      const mnemonic = algosdk.secretKeyToMnemonic(account.sk)
-      
-      // Save account locally
-      localStorage.setItem('algorand_account', JSON.stringify({ mnemonic }))
-      
-      setAccount(account)
-      setIsConnected(true)
-      await fetchAccountInfo(account.addr)
+      // Get initial balance
+      const accountBalance = await AlgorandService.getBalance(newAccount.addr)
+      setBalance(accountBalance)
     } catch (error) {
       console.error('Error connecting wallet:', error)
     } finally {
       setIsConnecting(false)
     }
-  }
+  }, [])
 
-  const disconnect = () => {
-    localStorage.removeItem('algorand_account')
+  const disconnect = useCallback(() => {
     setAccount(null)
-    setAccountInfo(null)
-    setIsConnected(false)
-  }
+    setBalance(null)
+  }, [])
 
-  const createProjectToken = async (projectName: string, totalSupply: number) => {
-    if (!account) throw new Error('No wallet connected')
-    
-    try {
-      const result = await AlgorandService.createProjectToken(
-        account,
-        projectName,
-        totalSupply
-      )
-      console.log('Project token created:', result)
-      return result
-    } catch (error) {
-      console.error('Error creating project token:', error)
-      throw error
-    }
-  }
+  // Update balance periodically when connected
+  useEffect(() => {
+    if (!account) return
 
-  const investInProject = async (projectAssetId: number, amount: number) => {
-    if (!account) throw new Error('No wallet connected')
-    
-    try {
-      const result = await AlgorandService.investInProject(
-        account,
-        projectAssetId,
-        amount
-      )
-      console.log('Investment successful:', result)
-      await fetchAccountInfo(account.addr)
-      return result
-    } catch (error) {
-      console.error('Error investing in project:', error)
-      throw error
+    const updateBalance = async () => {
+      try {
+        const newBalance = await AlgorandService.getBalance(account.addr)
+        setBalance(newBalance)
+      } catch (error) {
+        console.error('Error updating balance:', error)
+      }
     }
-  }
+
+    const interval = setInterval(updateBalance, 10000) // Update every 10 seconds
+    return () => clearInterval(interval)
+  }, [account])
 
   return (
     <WalletContext.Provider
       value={{
         account,
-        accountInfo,
+        isConnected: !!account,
         isConnecting,
-        isConnected,
         connect,
         disconnect,
-        createProjectToken,
-        investInProject,
+        balance,
       }}
     >
       {children}
@@ -137,9 +90,5 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 }
 
 export function useWallet() {
-  const context = useContext(WalletContext)
-  if (context === undefined) {
-    throw new Error('useWallet must be used within a WalletProvider')
-  }
-  return context
+  return useContext(WalletContext)
 } 
