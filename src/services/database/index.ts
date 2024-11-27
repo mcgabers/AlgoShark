@@ -14,12 +14,18 @@ prisma.$connect()
   })
 
 export class DatabaseService {
-  static async createUser(email: string, walletAddress: string, name?: string) {
+  static async createUser(data: {
+    name: string
+    email: string
+    walletAddress: string
+    profile?: any
+  }) {
     return prisma.user.create({
       data: {
-        email,
-        walletAddress,
-        name,
+        name: data.name,
+        email: data.email,
+        walletAddress: data.walletAddress,
+        profile: data.profile,
       },
     })
   }
@@ -64,6 +70,7 @@ export class DatabaseService {
   static async createProject(data: {
     title: string
     description: string
+    longDescription?: string
     fundingGoal: number
     category: string
     tags: string[]
@@ -73,11 +80,14 @@ export class DatabaseService {
     tokensAvailable: number
     creatorId: string
     metadata?: any
+    tokenMetadata?: any
+    dividendSettings?: any
   }) {
     return prisma.project.create({
       data: {
         ...data,
         currentFunding: 0,
+        status: 'pending',
       },
       include: {
         creator: true,
@@ -301,10 +311,10 @@ export class DatabaseService {
   }
 
   static async createVote(data: {
+    proposalId: string
+    voterId: string
     choice: string
     power: number
-    voterId: string
-    proposalId: string
     metadata?: any
   }) {
     return prisma.vote.create({
@@ -349,31 +359,6 @@ export class DatabaseService {
       orderBy: {
         createdAt: 'desc',
       },
-    })
-  }
-
-  static async getProjectTransactions(projectId: string) {
-    return prisma.tokenTransaction.findMany({
-      where: { projectId },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            walletAddress: true
-          }
-        },
-        receiver: {
-          select: {
-            id: true,
-            name: true,
-            walletAddress: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
     })
   }
 } 
