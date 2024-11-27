@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  email         String       @unique
+  name          String?
+  walletAddress String       @unique
+  profile       Json?        // Stores bio, expertise, social links
+  projects      Project[]    // Projects created by user
+  investments   Investment[] // Investments made by user
+  votes         Vote[]       // Votes cast by user
+  delegatedTo   User?        @relation("Delegation", fields: [delegateId], references: [id])
+  delegateId    String?
+  delegators    User[]       @relation("Delegation")
+  proposals     Proposal[]   // Proposals created by user
+}
+
+model Project {
+  id              String       @id @default(cuid())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  title           String
+  description     String
+  fundingGoal     Float
+  currentFunding  Float       @default(0)
+  category        String
+  tags            String[]
+  githubUrl       String
+  assetId         Int         @unique
+  tokenPrice      Float
+  tokensAvailable Int
+  status          String      @default("pending") // pending, active, completed
+  metadata        Json?       // Stores stage, round, tech stack, team, roadmap, metrics
+  creator         User        @relation(fields: [creatorId], references: [id])
+  creatorId       String
+  investments     Investment[]
+  proposals       Proposal[]
+}
+
+model Investment {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  amount       Float
+  tokenAmount  Int
+  metadata     Json?    // Stores strategy, round, expectations, evaluation criteria
+  investor     User     @relation(fields: [investorId], references: [id])
+  investorId   String
+  project      Project  @relation(fields: [projectId], references: [id])
+  projectId    String
+}
+
+model Proposal {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  type        String   // FUNDING, GOVERNANCE, TECHNICAL
+  status      String   @default("pending") // pending, active, completed
+  parameters  Json?    // Stores voting parameters and type-specific details
+  creator     User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  votes       Vote[]
+}
+
+model Vote {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  choice      String   // YES, NO, ABSTAIN
+  power       Int
+  metadata    Json?    // Stores rationale, concerns, suggestions
+  voter       User     @relation(fields: [voterId], references: [id])
+  voterId     String
+  proposal    Proposal @relation(fields: [proposalId], references: [id])
+  proposalId  String
+}
+
+model ContractVersion {
+  id          String   @id @default(cuid())
+  contractId  String
+  version     String
+  sourceCode  String
+  bytecode    String
+  timestamp   DateTime @default(now())
+  status      String   @default("inactive") // active, inactive, deprecated
+  changes     String[]
+  metadata    Json?
+  createdBy   String
+  updatedAt   DateTime @updatedAt
+
+  @@unique([contractId, version])
+  @@index([contractId, status])
+} 

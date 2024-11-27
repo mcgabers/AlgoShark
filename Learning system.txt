@@ -1,0 +1,592 @@
+AI Agent Learning System Implementation Prompt
+Overview
+Implement a self-improving learning system that automatically captures, documents, and applies learnings from errors and development experiences. The system should prevent repeated mistakes and proactively guide development decisions based on accumulated knowledge.
+Core Components
+1. Error Resolution Tracking
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Implement a hook/service that:
+- Automatically captures errors with full context
+- Tracks resolution attempts and success
+- Records time-to-resolution and solution approach
+- Categorizes errors by type and affected components
+- Links errors to specific code locations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. Learning Documentation System
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Create a structured learning storage that includes:
+{
+  "version": "1.0.0",
+  "lastUpdated": "ISO-DATE",
+  "categories": {
+    "[category-key]": {
+      "title": "Category Name",
+      "learnings": [
+        {
+          "id": "unique-id",
+          "issue": "Detailed issue description",
+          "solution": "Implemented solution",
+          "prevention": ["Prevention step 1", "Prevention step 2"],
+          "example": "code/path/example.ts",
+          "dateAdded": "ISO-DATE"
+        }
+      ]
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3. Learning Advisor Service
+Implement a service that:
+Analyzes past learnings for relevance to new features
+Generates preventive recommendations
+Creates specific validation checks
+Identifies risk patterns
+Suggests best practices
+Implementation Steps
+Error Resolution System
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+interface ErrorResolution {
+  error: Error;
+  timestamp: number;
+  context: {
+    component?: string;
+    filePath?: string;
+    action?: string;
+  };
+  resolution?: {
+    succeededAfter: number;
+    attempts: number;
+    successfulAction: string;
+  };
+}
+
+// Implement tracking functions:
+- trackError(error: Error, context: Context)
+- trackResolution(error: Error, solution: string)
+- documentResolution(resolution: ErrorResolution)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Learning Service
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+interface Learning {
+  id: string;
+  issue: string;
+  solution: string;
+  prevention: string[];
+  example: string;
+  dateAdded: string;
+}
+
+// Implement core functions:
+- addLearning(category: string, learning: Learning)
+- getLearnings(): LearningsFile
+- searchLearnings(query: string): Learning[]
+- analyzeTrends(): TrendAnalysis
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Advisor System
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+interface FeatureContext {
+  name: string;
+  type: 'feature' | 'epic' | 'bugfix';
+  components?: string[];
+  technologies?: string[];
+  description?: string;
+}
+
+// Implement advisory functions:
+- getPreventiveAdvice(context: FeatureContext)
+- analyzeSuccessPatterns()
+- calculateRelevance(learning: Learning, context: FeatureContext)
+- generateChecks(learning: Learning, context: FeatureContext)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Integration Points
+Error Boundaries
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- Integrate with framework error handling
+- Capture error context automatically
+- Track resolution attempts
+- Document successful resolutions
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Development Workflow
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- Add pre-implementation advice checks
+- Integrate with CI/CD for validation
+- Add automated learning documentation
+- Create feedback loops for solution effectiveness
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+API Layer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+- Add endpoints for learning management
+- Implement advisory endpoints
+- Add validation middleware
+- Create learning analytics endpoints
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Best Practices
+Automatic Capture
+Never require manual documentation
+Capture context automatically
+Track resolution paths
+Monitor solution effectiveness
+Smart Categorization
+Use NLP for categorization
+Implement similarity matching
+Track technology patterns
+Identify common root causes
+Proactive Prevention
+Generate specific checks
+Create validation rules
+Suggest architectural improvements
+Identify risk patterns
+Continuous Improvement
+Track success rates of recommendations
+Update prevention strategies
+Refine categorization
+Improve relevance scoring
+Example Usage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Before implementing new features:
+const advice = await learningAdvisor.getPreventiveAdvice({
+  name: "New Feature",
+  type: "feature",
+  components: ["ComponentA", "ComponentB"],
+  technologies: ["react", "api"],
+  description: "Feature description"
+});
+
+// System returns:
+{
+  relevantLearnings: [
+    {
+      id: "LE123",
+      issue: "Previous similar issue",
+      prevention: ["Prevention steps"],
+      example: "src/example.ts",
+      similarity: 0.8
+    }
+  ],
+  recommendations: [
+    "Specific recommendations",
+    "Best practices"
+  ],
+  suggestedChecks: [
+    "✓ Validation checks",
+    "✓ Test requirements"
+  ]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Success Criteria
+Zero Manual Documentation
+All learnings captured automatically
+Context gathered without user input
+Solutions documented through actions
+Measurable Prevention
+Reduction in repeated errors
+Increased first-time success rate
+Faster problem resolution
+Improved code quality metrics
+Actionable Intelligence
+Specific, contextual recommendations
+Clear prevention steps
+Measurable success rates
+Evolving best practices
+Self-Improvement
+Learning effectiveness tracking
+Recommendation success rates
+Pattern recognition
+Automated refinement
+This system should be implemented as a core part of your application's architecture, not as an afterthought. It should continuously learn and improve, making each development iteration better than the last.
