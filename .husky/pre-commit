@@ -1,0 +1,14 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run type checking
+npm run type-check
+
+# Run linting
+npm run lint
+
+# Run unit tests
+npm run test:unit
+
+# Run integration tests that are fast enough for pre-commit
+npm run test:integration:fast 

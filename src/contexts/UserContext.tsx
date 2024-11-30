@@ -1,68 +1,84 @@
 'use client'
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type ReactNode,
-} from 'react'
-import { useWallet } from './WalletContext'
+import { createContext, useContext, useState, useEffect } from 'react'
 
 interface User {
   id: string
-  name: string | null
-  email: string | null
-  walletAddress: string
+  name?: string
+  email?: string
+  walletAddress?: string
+  onboardingComplete?: boolean
+  displayName?: string
+  investmentStyle?: string
+  riskTolerance?: string
 }
 
 interface UserContextType {
   user: User | null
+  updateUser: (data: Partial<User>) => Promise<void>
   isLoading: boolean
   error: string | null
 }
 
-const UserContext = createContext<UserContextType>({
-  user: null,
-  isLoading: false,
-  error: null,
-})
+const UserContext = createContext<UserContextType | undefined>(undefined)
 
-export function UserProvider({ children }: { children: ReactNode }) {
-  const { account, isConnected } = useWallet()
+export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (isConnected && account) {
-      setIsLoading(true)
-      // For development, create a mock user when wallet is connected
-      setUser({
-        id: account.addr,
-        name: 'Test User',
-        email: null,
-        walletAddress: account.addr,
-      })
-      setIsLoading(false)
-    } else {
-      setUser(null)
+    async function loadUser() {
+      try {
+        const response = await fetch('/api/user')
+        if (response.ok) {
+          const data = await response.json()
+          setUser(data)
+        }
+      } catch (err) {
+        console.error('Error loading user:', err)
+        setError('Failed to load user data')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [isConnected, account])
+
+    loadUser()
+  }, [])
+
+  const updateUser = async (data: Partial<User>) => {
+    try {
+      const response = await fetch('/api/user', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update user')
+      }
+
+      const updatedUser = await response.json()
+      setUser(updatedUser)
+    } catch (err) {
+      console.error('Error updating user:', err)
+      throw err
+    }
+  }
 
   return (
-    <UserContext.Provider
-      value={{
-        user,
-        isLoading,
-        error,
-      }}
-    >
+    <UserContext.Provider value={{ user, updateUser, isLoading, error }}>
       {children}
     </UserContext.Provider>
   )
 }
 
 export function useUser() {
-  return useContext(UserContext)
+  const context = useContext(UserContext)
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider')
+  }
+  return context
 } 

@@ -23,6 +23,55 @@ const StatusColor = {
   failed: 'text-red-600',
 }
 
+function formatMetricValue(value: any): string {
+  if (value === undefined || value === null) return 'N/A';
+  if (typeof value === 'number') {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+    return `$${value.toFixed(2)}`;
+  }
+  if (typeof value === 'string') return value;
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  return String(value);
+}
+
+function getMetricStatus(key: string, value: any): 'passed' | 'warning' | 'failed' {
+  if (value === undefined || value === null) return 'failed';
+  
+  // Financial metrics
+  if (key.includes('revenue') || key.includes('profit')) {
+    return value > 0 ? 'passed' : value === 0 ? 'warning' : 'failed';
+  }
+  
+  // Growth metrics
+  if (key.includes('growth') || key.includes('rate')) {
+    return value > 0.1 ? 'passed' : value > 0 ? 'warning' : 'failed';
+  }
+  
+  // Percentage metrics
+  if (typeof value === 'number' && (key.includes('percentage') || key.includes('ratio'))) {
+    return value > 0.7 ? 'passed' : value > 0.4 ? 'warning' : 'failed';
+  }
+  
+  // Boolean metrics
+  if (typeof value === 'boolean') {
+    return value ? 'passed' : 'failed';
+  }
+  
+  // Default case
+  return 'passed';
+}
+
+function transformToArray(data: any) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (typeof data === 'object') return Object.entries(data).map(([key, value]) => ({
+    ...value,
+    category: key,
+  }));
+  return [];
+}
+
 export function DueDiligenceView({ dueDiligence }) {
   if (!dueDiligence) {
     return (
@@ -39,29 +88,45 @@ export function DueDiligenceView({ dueDiligence }) {
   const sections: DueDiligenceSection[] = [
     {
       title: 'Code Analysis',
-      items: (dueDiligence.codeAnalysis || []).map(item => ({
-        name: item.check,
-        status: item.result,
-        description: item.details
+      items: transformToArray(dueDiligence.codeAnalysis?.issues).map(item => ({
+        name: item.type || 'Unknown Issue',
+        status: item.severity === 'critical' || item.severity === 'high' ? 'failed' :
+               item.severity === 'medium' ? 'warning' : 'passed',
+        description: item.description || 'No description available'
       }))
     },
     {
       title: 'Legal Compliance',
-      items: (dueDiligence.legalChecks || []).map(item => ({
-        name: item.requirement,
-        status: item.status,
-        description: item.details
+      items: transformToArray(dueDiligence.legalChecks?.compliance).map(item => ({
+        name: item.category || 'Unknown Category',
+        status: item.status === 'pass' ? 'passed' :
+               item.status === 'warning' ? 'warning' : 'failed',
+        description: item.details || 'No details available'
       }))
     },
     {
       title: 'Security Audit',
-      items: (dueDiligence.securityAudit || []).map(item => ({
-        name: item.check,
-        status: item.result,
-        description: item.findings
+      items: transformToArray(dueDiligence.securityAudit?.vulnerabilities).map(item => ({
+        name: item.type || 'Unknown Vulnerability',
+        status: item.severity === 'critical' || item.severity === 'high' ? 'failed' :
+               item.severity === 'medium' ? 'warning' : 'passed',
+        description: item.description || item.recommendation || 'No description available'
       }))
     }
   ]
+
+  // Add metrics section if available
+  const metrics = dueDiligence.metrics || dueDiligence.codeAnalysis?.metrics || {};
+  if (Object.keys(metrics).length > 0) {
+    sections.push({
+      title: 'Project Metrics',
+      items: Object.entries(metrics).map(([key, value]) => ({
+        name: key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+        status: getMetricStatus(key, value),
+        description: `Current Value: ${formatMetricValue(value)}`
+      }))
+    });
+  }
 
   return (
     <div className="space-y-8">
@@ -76,10 +141,10 @@ export function DueDiligenceView({ dueDiligence }) {
             <h3 className="text-lg font-medium text-gray-900">{section.title}</h3>
             {section.items.length > 0 ? (
               <div className="bg-gray-50 rounded-lg divide-y divide-gray-200">
-                {section.items.map((item) => {
+                {section.items.map((item, index) => {
                   const Icon = StatusIcon[item.status]
                   return (
-                    <div key={item.name} className="p-4">
+                    <div key={`${item.name}-${index}`} className="p-4">
                       <div className="flex items-start">
                         <div className={`p-1 ${StatusColor[item.status]}`}>
                           <Icon className="h-5 w-5" />

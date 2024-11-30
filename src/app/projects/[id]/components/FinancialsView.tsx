@@ -2,10 +2,24 @@
 
 import { BarChart2, TrendingUp, DollarSign, Users } from 'lucide-react'
 
+function formatNumber(value: number | undefined, type: 'currency' | 'percentage' | 'number' = 'number'): string {
+  if (value === undefined || value === null) return 'N/A';
+  
+  if (type === 'currency') {
+    return `$${value.toLocaleString()}`;
+  }
+  
+  if (type === 'percentage') {
+    return `${(value * 100).toFixed(1)}%`;
+  }
+  
+  return value.toLocaleString();
+}
+
 export function FinancialsView({ project }) {
-  const metrics = project.metadata.metrics
-  const stage = project.metadata.stage
-  const round = project.metadata.round
+  const metrics = project?.metadata?.metrics || {};
+  const stage = project?.metadata?.stage || 'Not specified';
+  const round = project?.metadata?.round || 'Not specified';
 
   return (
     <div className="space-y-8">
@@ -24,7 +38,7 @@ export function FinancialsView({ project }) {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Revenue</p>
               <p className="text-2xl font-semibold text-gray-900">
-                ${metrics.revenue.toLocaleString()}
+                {formatNumber(metrics.revenue, 'currency')}
               </p>
             </div>
           </div>
@@ -37,7 +51,7 @@ export function FinancialsView({ project }) {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Users</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {metrics.users.toLocaleString()}
+                {formatNumber(metrics.users)}
               </p>
             </div>
           </div>
@@ -50,7 +64,7 @@ export function FinancialsView({ project }) {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Growth Rate</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {(metrics.growth * 100).toFixed(1)}%
+                {formatNumber(metrics.growth, 'percentage')}
               </p>
             </div>
           </div>
@@ -63,7 +77,7 @@ export function FinancialsView({ project }) {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Retention</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {(metrics.retention * 100).toFixed(1)}%
+                {formatNumber(metrics.retention, 'percentage')}
               </p>
             </div>
           </div>
@@ -84,19 +98,19 @@ export function FinancialsView({ project }) {
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Token Price</dt>
-            <dd className="mt-1 text-sm text-gray-900">{project.tokenPrice} ALGO</dd>
+            <dd className="mt-1 text-sm text-gray-900">{project.tokenPrice || 0} ALGO</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Available Tokens</dt>
-            <dd className="mt-1 text-sm text-gray-900">{project.tokensAvailable.toLocaleString()}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{formatNumber(project.tokensAvailable)}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Funding Goal</dt>
-            <dd className="mt-1 text-sm text-gray-900">${project.fundingGoal.toLocaleString()}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{formatNumber(project.fundingGoal, 'currency')}</dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-gray-500">Current Funding</dt>
-            <dd className="mt-1 text-sm text-gray-900">${project.currentFunding.toLocaleString()}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{formatNumber(project.currentFunding, 'currency')}</dd>
           </div>
         </dl>
       </div>
@@ -107,16 +121,16 @@ export function FinancialsView({ project }) {
         <div className="space-y-4">
           <div className="flex justify-between text-sm text-gray-600">
             <span>Progress</span>
-            <span>{Math.round((project.currentFunding / project.fundingGoal) * 100)}%</span>
+            <span>{Math.round(((project.currentFunding || 0) / (project.fundingGoal || 1)) * 100)}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full"
-              style={{ width: `${Math.min(100, (project.currentFunding / project.fundingGoal) * 100)}%` }}
+              style={{ width: `${Math.min(100, ((project.currentFunding || 0) / (project.fundingGoal || 1)) * 100)}%` }}
             />
           </div>
           <p className="text-sm text-gray-600">
-            ${project.currentFunding.toLocaleString()} raised of ${project.fundingGoal.toLocaleString()} goal
+            {formatNumber(project.currentFunding, 'currency')} raised of {formatNumber(project.fundingGoal, 'currency')} goal
           </p>
         </div>
       </div>

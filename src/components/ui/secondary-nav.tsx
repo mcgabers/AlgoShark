@@ -12,6 +12,8 @@ import {
   Tag,
   Briefcase,
   Settings as SettingsIcon,
+  Folder,
+  Star,
 } from 'lucide-react'
 
 interface NavItem {
@@ -24,6 +26,12 @@ const discoverNavigation: NavItem[] = [
   { name: 'All Projects', href: '/discover', icon: Filter },
   { name: 'Trending', href: '/discover/trending', icon: BarChart2 },
   { name: 'Categories', href: '/discover/categories', icon: Tag },
+]
+
+const projectsNavigation: NavItem[] = [
+  { name: 'All Projects', href: '/projects', icon: Folder },
+  { name: 'Featured', href: '/projects/featured', icon: Star },
+  { name: 'My Projects', href: '/projects/my-projects', icon: Briefcase },
 ]
 
 const portfolioNavigation: NavItem[] = [
@@ -48,11 +56,11 @@ function NavSection({ title, items }: { title: string; items: NavItem[] }) {
   const pathname = usePathname()
 
   return (
-    <div>
-      <h2 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+    <div role="navigation" aria-label={`${title} Navigation`}>
+      <h2 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
         {title}
       </h2>
-      <nav className="mt-2 space-y-1">
+      <nav className="mt-6 space-y-1 px-3">
         {items.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href
@@ -61,15 +69,17 @@ function NavSection({ title, items }: { title: string; items: NavItem[] }) {
               key={item.name}
               href={item.href}
               className={cn(
-                'group flex items-center px-3 py-2 text-sm font-medium rounded-md',
+                'group flex items-center h-10 text-sm font-medium rounded-md transition-all duration-150',
+                'focus:outline-none focus:ring-2 focus:ring-gray-400',
                 isActive
-                  ? 'bg-gray-200 text-gray-900'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                  ? 'bg-gray-200 text-gray-900 shadow-sm px-4'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-3'
               )}
+              aria-current={isActive ? 'page' : undefined}
             >
               <Icon
                 className={cn(
-                  'flex-shrink-0 -ml-1 mr-3 h-6 w-6',
+                  'flex-shrink-0 -ml-1 mr-3 h-5 w-5 transition-colors duration-150',
                   isActive
                     ? 'text-gray-500'
                     : 'text-gray-400 group-hover:text-gray-500'
@@ -93,6 +103,9 @@ export function SecondaryNav() {
   if (pathname.startsWith('/discover')) {
     navigation = discoverNavigation
     title = 'Discover'
+  } else if (pathname.startsWith('/projects')) {
+    navigation = projectsNavigation
+    title = 'Projects'
   } else if (pathname.startsWith('/portfolio')) {
     navigation = portfolioNavigation
     title = 'Portfolio'
@@ -109,7 +122,10 @@ export function SecondaryNav() {
   }
 
   return (
-    <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+    <div 
+      className="flex-1 flex flex-col pt-6 pb-4 overflow-y-auto transition-opacity duration-200 border-r border-gray-200"
+      role="complementary"
+    >
       <NavSection title={title} items={navigation} />
     </div>
   )

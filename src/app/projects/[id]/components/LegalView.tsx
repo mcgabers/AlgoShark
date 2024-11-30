@@ -2,8 +2,17 @@
 
 import { Scale, FileText, Shield, AlertCircle } from 'lucide-react'
 
+const DEFAULT_LEGAL_DOCS = [
+  'Terms of Service',
+  'Privacy Policy',
+  'Token Agreement',
+  'Investment Disclaimer'
+]
+
 export function LegalView({ project }) {
-  const { documentation } = project.metadata
+  const documentation = project?.metadata?.documentation || {};
+  const legalDocs = documentation.legal || DEFAULT_LEGAL_DOCS;
+  const governance = documentation.governance || 'Standard governance framework applies to this project.';
 
   return (
     <div className="space-y-8">
@@ -16,13 +25,18 @@ export function LegalView({ project }) {
       <div className="bg-white rounded-lg border p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Legal Framework</h3>
         <div className="space-y-6">
-          {documentation.legal.map((doc, index) => (
+          {legalDocs.map((doc, index) => (
             <div key={index} className="flex items-start">
               <div className="p-1">
                 <FileText className="h-5 w-5 text-blue-600" />
               </div>
               <div className="ml-3">
-                <p className="text-sm text-gray-600">{doc}</p>
+                <div className="flex flex-col">
+                  <p className="text-sm font-medium text-gray-900">{doc}</p>
+                  <p className="text-xs text-gray-500">
+                    {typeof doc === 'object' ? doc.description : 'Standard legal documentation required for project operation'}
+                  </p>
+                </div>
               </div>
             </div>
           ))}
@@ -37,7 +51,7 @@ export function LegalView({ project }) {
             <Shield className="h-5 w-5 text-blue-600" />
           </div>
           <div className="ml-3">
-            <p className="text-sm text-gray-600">{documentation.governance}</p>
+            <p className="text-sm text-gray-600">{governance}</p>
           </div>
         </div>
       </div>

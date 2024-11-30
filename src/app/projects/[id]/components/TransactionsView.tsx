@@ -2,11 +2,32 @@
 
 import { History, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
+interface Transaction {
+  txId: string
+  type?: string
+  from: string
+  to: string
+  amount: number
+  token: string
+  timestamp: string
+}
+
 function formatAddress(address: string): string {
+  if (!address) return 'Unknown';
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-function TransactionRow({ transaction }) {
+function formatTransactionType(type?: string): string {
+  if (!type) return 'Transaction';
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function formatAmount(amount?: number, token?: string): string {
+  if (amount === undefined) return 'N/A';
+  return `${amount.toLocaleString()} ${token || 'tokens'}`;
+}
+
+function TransactionRow({ transaction }: { transaction: Transaction }) {
   const isInvestment = transaction.type === 'investment'
   
   return (
@@ -25,7 +46,7 @@ function TransactionRow({ transaction }) {
             )}
           </div>
           <span className="ml-2 font-medium text-gray-900">
-            {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+            {formatTransactionType(transaction.type)}
           </span>
         </div>
       </td>
@@ -36,26 +57,46 @@ function TransactionRow({ transaction }) {
         {formatAddress(transaction.to)}
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-        {transaction.amount.toLocaleString()} {transaction.token}
+        {formatAmount(transaction.amount, transaction.token)}
       </td>
       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-        {new Date(transaction.timestamp).toLocaleString()}
+        {transaction.timestamp ? new Date(transaction.timestamp).toLocaleString() : 'N/A'}
       </td>
       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-        <a
-          href={`https://explorer.algorand.org/tx/${transaction.txId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-900"
-        >
-          View<span className="sr-only">, transaction {transaction.txId}</span>
-        </a>
+        {transaction.txId && (
+          <a
+            href={`https://explorer.algorand.org/tx/${transaction.txId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-900"
+          >
+            View<span className="sr-only">, transaction {transaction.txId}</span>
+          </a>
+        )}
       </td>
     </tr>
   )
 }
 
-export function TransactionsView({ transactions }) {
+export function TransactionsView({ transactions = [] }: { transactions: Transaction[] }) {
+  if (!transactions.length) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <History className="h-6 w-6 text-blue-600" />
+          <h2 className="text-xl font-semibold text-gray-900">Transaction History</h2>
+        </div>
+        <div className="text-center py-12 bg-white rounded-lg border">
+          <History className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No Transactions</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            No transactions have been recorded for this project yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -89,7 +130,7 @@ export function TransactionsView({ transactions }) {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {transactions.map((transaction) => (
-              <TransactionRow key={transaction.txId} transaction={transaction} />
+              <TransactionRow key={transaction.txId || Math.random()} transaction={transaction} />
             ))}
           </tbody>
         </table>
