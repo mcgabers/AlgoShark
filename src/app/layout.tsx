@@ -1,13 +1,16 @@
-'use client'
-
+import { type Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import './globals.css'
-import { cn } from '@/lib/utils'
+import { Providers } from './providers'
 import { AppShell } from '@/components/AppShell'
-import { WalletProvider } from '@/contexts/WalletContext'
 import { UserProvider } from '@/contexts/UserContext'
+import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'AlgoShark',
+  description: 'Decentralized Investment Platform',
+}
 
 export default function RootLayout({
   children,
@@ -15,15 +18,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className={cn(inter.className, "h-full bg-gray-50")}>
-        <WalletProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <Providers>
           <UserProvider>
-            <AppShell>
-              {children}
-            </AppShell>
+            <AppShell>{children}</AppShell>
           </UserProvider>
-        </WalletProvider>
+        </Providers>
       </body>
     </html>
   )

@@ -9,23 +9,28 @@ import {
   PlusCircle,
   BarChart2,
   Settings,
+  Briefcase,
+  Vote,
   type LucideIcon
 } from 'lucide-react'
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Discover', href: '/discover', icon: Search },
-  { name: 'Submit Project', href: '/submit', icon: PlusCircle },
+  { name: 'Projects', href: '/projects', icon: Briefcase },
   { name: 'Portfolio', href: '/portfolio', icon: BarChart2 },
+  { name: 'Governance', href: '/governance', icon: Vote },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 function NavIcon({
   icon: Icon,
   active = false,
+  name,
 }: {
   icon: LucideIcon
   active?: boolean
+  name: string
 }) {
   return (
     <Icon
@@ -36,6 +41,8 @@ function NavIcon({
           : 'text-gray-400 group-hover:text-gray-300'
       )}
       aria-hidden="true"
+      role="img"
+      aria-label={`${name} icon`}
     />
   )
 }
@@ -44,7 +51,10 @@ export function IconNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex flex-1 flex-col gap-y-4 pt-4">
+    <nav 
+      className="flex flex-1 flex-col gap-y-4 py-6"
+      aria-label="Main Navigation"
+    >
       {navigation.map((item) => {
         const active = pathname === item.href
         return (
@@ -52,14 +62,17 @@ export function IconNav() {
             key={item.name}
             href={item.href}
             className={cn(
-              'group flex items-center justify-center p-2',
+              'group flex items-center justify-center h-12 w-12 mx-auto rounded-md transition-all duration-150',
+              'focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900',
               active
-                ? 'bg-gray-800 text-white'
+                ? 'bg-gray-800 text-white shadow-lg'
                 : 'text-gray-400 hover:bg-gray-800 hover:text-white'
             )}
+            aria-label={item.name}
+            aria-current={active ? 'page' : undefined}
           >
             <span className="sr-only">{item.name}</span>
-            <NavIcon icon={item.icon} active={active} />
+            <NavIcon icon={item.icon} active={active} name={item.name} />
           </Link>
         )
       })}

@@ -6,6 +6,7 @@ import { useWallet } from '@/contexts/WalletContext'
 import { BarChart2, TrendingUp, Users, Activity, ArrowRight, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { formatTimeAgo, formatAmount } from '@/lib/utils'
+import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow'
 
 interface PlatformStats {
   totalProjects: number
@@ -44,6 +45,16 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  useEffect(() => {
+    // Show onboarding if user is connected but hasn't completed onboarding
+    if (isConnected && user && user.onboardingComplete === false && !localStorage.getItem('onboardingComplete')) {
+      setShowOnboarding(true)
+    } else {
+      setShowOnboarding(false)
+    }
+  }, [isConnected, user])
 
   useEffect(() => {
     async function fetchData() {
@@ -81,6 +92,11 @@ export default function Home() {
     fetchData()
   }, [user])
 
+  // Show onboarding flow if needed
+  if (showOnboarding) {
+    return <OnboardingFlow />
+  }
+
   return (
     <main className="flex-1 p-6 overflow-y-auto">
       <div className="flex flex-col items-start gap-6 max-w-7xl mx-auto">
@@ -105,19 +121,19 @@ export default function Home() {
         {!isConnected && (
           <div className="w-full rounded-lg border-2 border-blue-100 bg-blue-50 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Get Started with AlgoShark</h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 mb-6">
               Connect your wallet to start investing in AI-powered projects or submit your own project for funding.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Link 
                 href="/discover"
-                className="inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                className="inline-flex items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 min-h-[44px]"
               >
                 Browse Projects
               </Link>
               <Link
                 href="/submit"
-                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 min-h-[44px]"
               >
                 Submit Project
               </Link>
@@ -153,6 +169,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
@@ -164,17 +181,19 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total Funding</p>
-                    <p className="mt-2 text-3xl font-semibold text-gray-900">${stats.totalFunding.toLocaleString()}</p>
+                    <p className="mt-2 text-3xl font-semibold text-gray-900">${formatAmount(stats.totalFunding)}</p>
                   </div>
                   <div className="rounded-full bg-purple-50 p-3">
                     <TrendingUp className="h-6 w-6 text-purple-600" aria-hidden="true" />
                   </div>
                 </div>
               </div>
+
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
@@ -212,6 +231,7 @@ export default function Home() {
                   key={project.id}
                   href={`/discover/${project.id}`}
                   className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
+                  data-testid="recommended-project"
                 >
                   <h3 className="font-semibold text-gray-900">{project.title}</h3>
                   <p className="mt-2 text-sm text-gray-600 line-clamp-2">{project.description}</p>

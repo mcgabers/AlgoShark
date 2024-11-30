@@ -1,94 +1,85 @@
 'use client'
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  type ReactNode,
-} from 'react'
-import algosdk from 'algosdk'
-import { AlgorandService } from '@/services/blockchain/algorand'
+import { createContext, useContext, useState, useEffect } from 'react';
 
 interface WalletContextType {
-  account: algosdk.Account | null
-  isConnected: boolean
-  isConnecting: boolean
-  connect: () => Promise<void>
-  disconnect: () => void
-  balance: number | null
+  isConnected: boolean;
+  walletAddress: string | null;
+  connect: () => Promise<void>;
+  disconnect: () => void;
 }
 
-const WalletContext = createContext<WalletContextType>({
-  account: null,
-  isConnected: false,
-  isConnecting: false,
-  connect: async () => {},
-  disconnect: () => {},
-  balance: null,
-})
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
-export function WalletProvider({ children }: { children: ReactNode }) {
-  const [account, setAccount] = useState<algosdk.Account | null>(null)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [balance, setBalance] = useState<number | null>(null)
+export function WalletProvider({ children }: { children: React.ReactNode }) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
-  const connect = useCallback(async () => {
+  // Safe storage access with try-catch
+  const getStorageItem = (key: string): string | null => {
     try {
-      setIsConnecting(true)
-      // For development, generate a test account
-      const newAccount = AlgorandService.generateAccount()
-      setAccount(newAccount)
-
-      // Get initial balance
-      const accountBalance = await AlgorandService.getBalance(newAccount.addr)
-      setBalance(accountBalance)
+      return typeof window !== 'undefined' ? localStorage.getItem(key) : null;
     } catch (error) {
-      console.error('Error connecting wallet:', error)
-    } finally {
-      setIsConnecting(false)
+      console.warn('Storage access error:', error);
+      return null;
     }
-  }, [])
+  };
 
-  const disconnect = useCallback(() => {
-    setAccount(null)
-    setBalance(null)
-  }, [])
-
-  // Update balance periodically when connected
-  useEffect(() => {
-    if (!account) return
-
-    const updateBalance = async () => {
-      try {
-        const newBalance = await AlgorandService.getBalance(account.addr)
-        setBalance(newBalance)
-      } catch (error) {
-        console.error('Error updating balance:', error)
+  const setStorageItem = (key: string, value: string) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(key, value);
       }
+    } catch (error) {
+      console.warn('Storage write error:', error);
     }
+  };
 
-    const interval = setInterval(updateBalance, 10000) // Update every 10 seconds
-    return () => clearInterval(interval)
-  }, [account])
+  useEffect(() => {
+    // Initialize wallet state from storage
+    const storedConnected = getStorageItem('walletConnected') === 'true';
+    const storedAddress = getStorageItem('walletAddress');
+    
+    setIsConnected(storedConnected);
+    setWalletAddress(storedAddress);
+  }, []);
+
+  const connect = async () => {
+    try {
+      // Simulated wallet connection for testing
+      const address = '0x123...abc';
+      setWalletAddress(address);
+      setIsConnected(true);
+      setStorageItem('walletConnected', 'true');
+      setStorageItem('walletAddress', address);
+    } catch (error) {
+      console.error('Wallet connection error:', error);
+      throw error;
+    }
+  };
+
+  const disconnect = () => {
+    try {
+      setWalletAddress(null);
+      setIsConnected(false);
+      setStorageItem('walletConnected', 'false');
+      setStorageItem('walletAddress', '');
+    } catch (error) {
+      console.error('Wallet disconnection error:', error);
+    }
+  };
 
   return (
-    <WalletContext.Provider
-      value={{
-        account,
-        isConnected: !!account,
-        isConnecting,
-        connect,
-        disconnect,
-        balance,
-      }}
-    >
+    <WalletContext.Provider value={{ isConnected, walletAddress, connect, disconnect }}>
       {children}
     </WalletContext.Provider>
-  )
+  );
 }
 
 export function useWallet() {
-  return useContext(WalletContext)
+  const context = useContext(WalletContext);
+  if (context === undefined) {
+    throw new Error('useWallet must be used within a WalletProvider');
+  }
+  return context;
 } 

@@ -361,4 +361,20 @@ export class DatabaseService {
       },
     })
   }
+
+  static async getProjectTransactions(projectId: string) {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { assetId: true }
+    })
+
+    if (!project) {
+      throw new Error('Project not found')
+    }
+
+    return prisma.tokenTransaction.findMany({
+      where: { assetId: project.assetId },
+      orderBy: { createdAt: 'desc' }
+    })
+  }
 } 

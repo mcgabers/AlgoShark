@@ -7,223 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                String                @id @default(cuid())
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  email             String                @unique
-  name              String?
-  walletAddress     String                @unique
-  profile           Json?
-  delegateId        String?
-  reviewedDiligence DueDiligence[]        @relation("ReviewedDiligence")
-  diligenceComments DueDiligenceComment[]
-  diligenceReviews  DueDiligenceReview[]
-  investments       Investment[]
-  projects          Project[]
-  proposals         Proposal[]
-  delegatedTo       User?                 @relation("Delegation", fields: [delegateId], references: [id])
-  delegators        User[]                @relation("Delegation")
-  votes             Vote[]
-}
-
 model Project {
-  id               String                 @id @default(cuid())
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  title            String
+  id               String       @id @default(cuid())
+  name             String
   description      String
-  fundingGoal      Float
-  currentFunding   Float                  @default(0)
-  category         String
-  tags             String[]
   githubUrl        String
-  assetId          Int                    @unique
-  tokenPrice       Float
-  tokensAvailable  Int
-  status           String                 @default("pending")
-  metadata         Json?
+  tokenSymbol      String
+  initialSupply    Int
+  decimals         Int
+  vestingSchedule  Json
+  initialLiquidity Int
+  startingPrice    Float
+  status           String       @default("draft")
   creatorId        String
-  tokenMetadata    Json?
-  dividendSettings Json?
-  longDescription  String?
-  distributions    DividendDistribution[]
-  dueDiligence     DueDiligence?
-  investments      Investment[]
-  creator          User                   @relation(fields: [creatorId], references: [id])
-  proposals        Proposal[]
+  assetId          Int?
+  vestingContractId Int?
+  poolId           Int?
+  createdAt        DateTime     @default(now())
+  launchedAt       DateTime?
+  team             TeamMember[]
 }
 
-model Investment {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  amount      Float
-  tokenAmount Int
-  metadata    Json?
-  investorId  String
-  projectId   String
-  investor    User     @relation(fields: [investorId], references: [id])
-  project     Project  @relation(fields: [projectId], references: [id])
-}
-
-model Proposal {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  title       String
-  description String
-  startDate   DateTime
-  endDate     DateTime
-  type        String
-  status      String   @default("pending")
-  parameters  Json?
-  creatorId   String
-  projectId   String
-  creator     User     @relation(fields: [creatorId], references: [id])
-  project     Project  @relation(fields: [projectId], references: [id])
-  votes       Vote[]
-}
-
-model Vote {
-  id         String   @id @default(cuid())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  choice     String
-  power      Int
-  metadata   Json?
-  voterId    String
-  proposalId String
-  proposal   Proposal @relation(fields: [proposalId], references: [id])
-  voter      User     @relation(fields: [voterId], references: [id])
-}
-
-model ContractVersion {
-  id         String   @id @default(cuid())
-  contractId String
-  version    String
-  sourceCode String
-  bytecode   String
-  timestamp  DateTime @default(now())
-  status     String   @default("inactive")
-  changes    String[]
-  metadata   Json?
-  createdBy  String
-  updatedAt  DateTime @updatedAt
-
-  @@unique([contractId, version])
-  @@index([contractId, status])
-}
-
-model DueDiligence {
-  id            String                @id @default(cuid())
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
-  projectId     String                @unique
-  status        String                @default("pending")
-  reviewerId    String?
-  codeAnalysis  Json?
-  legalChecks   Json?
-  securityAudit Json?
-  project       Project               @relation(fields: [projectId], references: [id])
-  reviewer      User?                 @relation("ReviewedDiligence", fields: [reviewerId], references: [id])
-  comments      DueDiligenceComment[]
-  reviews       DueDiligenceReview[]
-}
-
-model DueDiligenceComment {
-  id             String       @id @default(cuid())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  content        String
-  dueDiligenceId String
-  authorId       String
-  parentId       String?
-  resolved       Boolean      @default(false)
-  author         User         @relation(fields: [authorId], references: [id])
-  dueDiligence   DueDiligence @relation(fields: [dueDiligenceId], references: [id])
-}
-
-model DueDiligenceReview {
-  id             String       @id @default(cuid())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  category       String
-  status         String
-  findings       Json
-  dueDiligenceId String
-  reviewerId     String
-  dueDiligence   DueDiligence @relation(fields: [dueDiligenceId], references: [id])
-  reviewer       User         @relation(fields: [reviewerId], references: [id])
-}
-
-model TokenTransaction {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  type        String
-  amount      Float
-  price       Float?
-  fromAddress String
-  toAddress   String
-  assetId     Int
-  status      String   @default("pending")
-  txId        String   @unique
-  metadata    Json?
-}
-
-model TokenAction {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  type          String
-  assetId       Int
-  targetAddress String
-  status        String   @default("pending")
-  txId          String   @unique
-  metadata      Json?
-}
-
-model TokenMetrics {
+model TeamMember {
   id                String   @id @default(cuid())
+  name              String
+  role              String
+  linkedIn          String
+  kycVerificationId String?
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id])
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  assetId           Int      @unique
-  totalHolders      Int
-  totalSupply       Float
-  circulatingSupply Float
-  dailyVolume       Float
-  dailyTransactions Int
-  lastUpdated       DateTime
-}
-
-model DividendDistribution {
-  id        String            @id @default(cuid())
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  timestamp DateTime          @default(now())
-  projectId String
-  assetId   Int
-  amount    Float
-  status    String            @default("pending")
-  metadata  Json?
-  project   Project           @relation(fields: [projectId], references: [id])
-  payments  DividendPayment[]
-}
-
-model DividendPayment {
-  id             String               @id @default(cuid())
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  timestamp      DateTime             @default(now())
-  distributionId String
-  holderAddress  String
-  amount         Float
-  status         String               @default("pending")
-  txId           String?
-  metadata       Json?
-  distribution   DividendDistribution @relation(fields: [distributionId], references: [id])
-
-  @@index([holderAddress])
-  @@index([distributionId, status])
 }
